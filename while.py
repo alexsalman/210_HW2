@@ -150,6 +150,7 @@ class Token(object):
 class Tokenizer(object):
 # constructor
     def __init__(self, user_input):
+        self.state = {}
         self.user_input = user_input
         self.pos = 0
         self.current_char = self.user_input[self.pos]
@@ -164,13 +165,22 @@ class Tokenizer(object):
         else:
             self.current_char = self.user_input[self.pos]
 # see what is after
-    def peek(self):
-        peek_pos = self.pos + 1
-        if peek_pos > len(self.user_input) - 1:
-            return None
-        else:
-            return self.user_input[peek_pos]
+#    def peek(self):
+#        peek_pos = self.pos + 1
+#        if peek_pos > len(self.user_input) - 1:
+#            return None
+#        else:
+#            return self.user_input[peek_pos]
 ####
+    def assignment(self):
+        result = ''
+        while self.current_char is not None and self.current_char in (':', '='):
+            result = result + self.current_char
+            self.advance()
+        if result == ':=':
+            return 'assign'
+        else:
+            return syntax_error(self)
     def a_space(self):
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
@@ -180,6 +190,16 @@ class Tokenizer(object):
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
+        return int(result)
+
+    def int_list(self):
+        result = ''
+        self.advance()
+        while self.current_char is not None and self.current_char != ']':
+            result += self.current_char
+            self.advance()
+        self.advance()
+        result = [int(i) for i in result.split(',')]
         return result
 
     def get_next_token(self):
@@ -213,10 +233,6 @@ class Tokenizer(object):
             if self.current_char == '}':
                 self.advance()
                 return Token(right_braces, '}')
-            if self.current_char == ':' and self.peek() == '=':
-                self.advance()
-                self.advance()
-                return Token(assign, '->')
             if self.current_char == '=':
                 self.advance()
                 return Token(equals, '=')
@@ -226,9 +242,6 @@ class Tokenizer(object):
             if self.current_char == '<':
                 self.advance()
                 return Token(smaller, '<')
-            if self.current_char == 'skip':
-                self.advance()
-                return Token(skipping, 'skip')
             if self.current_char == ';':
                 self.advance()
                 return Token(semi, ';')
@@ -241,11 +254,38 @@ class Tokenizer(object):
             if self.current_char == '∨':
                 self.advance()
                 return Token(orr, '∨')
+            if self.current_char == '[':
+                return Token(int_list, self.int_list())
+            if self.current_char == ':':
+                return Token(assign, self.assignment())
+            if self.current_char.isalpha():
+                result = ''
+                while self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit()):
+                    result += self.current_char
+                    self.advance()
+                if result == "while":
+                    return Token("WHILE", "while")
+                elif result == "skip":
+                    return Token("SKIP", "skip")
+                elif result == "do":
+                    return Token("DO", "do")
+                elif result == "if":
+                    return Token("IF", "if")
+                elif result == "else":
+                    return Token("ELSE", "else")
+                elif result == "then":
+                    return Token("THEN", "then")
+                elif result == "true":
+                    return Token("BOOL", True)
+                elif result == "false":
+                    return Token("BOOL", False)
+                else:
+                    return Token("VAR", result)
             self.error()
         return Token(EOF, None)
 
-INTEGER, pls, mns, mlt, div, left_parenthesis, left_parenthesis, left_braces, right_braces, assign, equals, greater, smaller, skipping, semi, no, andd, orr, EOF = (
-'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', '{', '}', '->', '=', '>', '<', 'skipping', ';', '¬', '∧', '∨','EOF')
+INTEGER, int_list, pls, mns, mlt, div, left_parenthesis, left_parenthesis, left_braces, right_braces, assign, equals, greater, smaller, skip, semi, no, AND, OR, WHILE, IF, THEN, ELSE, EOF = (
+'INTEGER', 'int_list', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', '{', '}', '->', '=', '>', '<', 'skip', ';', '¬', '∧', '∨', 'while', 'if', 'then', 'else', 'EOF')
 ################################################################################
 # main
 def main():
