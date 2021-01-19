@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 # Alex Salman 1/16/2021 aalsalma@ucsc.edu
-# resourses
+# resourses:
 # (1) https://ruslanspivak.com/lsbasi-part7/
 # (2) https://ruslanspivak.com/lsbasi-part8/
 # (3) https://ruslanspivak.com/lsbasi-part9/
+# (4) https://github.com/versey-sherry/while/blob/master/parsewhile.py
 ################################################################################
 # data structure
 class AST_Structure(object):
@@ -19,11 +20,6 @@ class Int(AST_Structure):
     def __init__(self, token):
         self.token = token
         self.value = token.value
-# to handle number with signs - or + with no space (negative and positive integers)
-class UnaryOp(AST_Structure):
-    def __init__(self, operation, expr):
-        self.token = self.operation = operation
-        self.expr = expr
 # variable
 class Var(AST_Structure):
     def __init__(self, token):
@@ -42,7 +38,7 @@ class Boolean(AST_Structure):
 # Not
 class Not(AST_Structure):
     def __init__(self, node):
-        self.operation = no
+        self.operation = NOT
         self.ap = node
 # Skip
 class Skip(AST_Structure):
@@ -87,29 +83,85 @@ class Parser(object):
     def syntax_error(self):
         raise Exception('You have a syntax error . . ')
 # comapre token type
-    def str_compare(self, token_type):
-        if self.current.type == token_type:
-            self.current = self.lexer.get_next_token()
+    def factor(self):
+        token = self.current_token
+        if token.type == 'MINUS':
+            self.current_token = self.lexer.get_next_token()
+            token = self.current_token
+            token.value = -token.value
+            node = Int(token)
+        elif token.type == 'INTEGER':
+            node = Int(token)
+        elif token.type == 'VAR':
+            node = Var(token)
+        elif token.type == 'ARRAY':
+            node = Array(token)
+        elif token.type == 'NOT':
+            self.current_token = self.lexer.get_next_token()
+            if self.current_token.type == 'LEFT_PARANTHESIS':
+                self.current_token = self.lexer.get_next_token()
+                node = self.before_expression()
+            elif self.current_token.type == 'BOOL':
+                node = Boolean(self.current_token)
+            else:
+                return syntax_error(self)
+            node = Not(node)
+        elif token.type == 'BOOL':
+            node = Boolean(token)
+        elif token.type == 'LEFT_PARANTHESIS':
+            self.current_token = self.lexer.get_next_token()
+            node = self.before_expression()
+        elif token.type == 'RIGHT_PARANTHESIS':
+            self.current_token = self.lexer.get_next_token()
+        elif token.type == 'LEFT_BRACES':
+            self.current_token = self.lexer.get_next_token()
+            node = self.middle_expression()
+        elif token.type == 'RIGHT_BRACES':
+            self.current_token = self.lexer.get_next_token()
+        elif token.type == 'SKIP':
+            node = Skip(token)
+        elif token.type == 'WHILE':
+            self.current_token = self.lexer.get_next_token()
+            condition = self.before_expression()
+            while_false = Skip(Token('SKIP' ,'skip'))
+            if self.current_token.type == 'DO':
+                self.current_token = self.lexer.get_next_token()
+                if self.current_token == 'LEFT_BRACES':
+                    while_true = self.middle_expression()
+                else:
+                    while_true = self.middle_term()
+            return While(condition, while_true, while_false)
+        elif token.type == "IF":
+            self.current_token = self.lexer.get_next_token()
+            condition = self.before_expression()
+            if self.current_token.type == "THEN":
+                self.current_token = self.lexer.get_next_token()
+                if_true = self.middle_expression()
+            if self.current_token.type == "ELSE":
+                self.current_token = self.lexer.get_next_token()
+                if_false = self.middle_expression()
+            return If(condition, if_true, if_false)
         else:
-            self.syntax_error()
-# check if value or expression
-    def value_or_expression(self):
-        token = self.current
-        if token.type == pls:
-            self.str_compare(pls)
-            node = UnaryOp(token, self.value_or_expression())
-            return node
-        elif token.type == mns:
-            self.str_compare(mns)
-            node = UnaryOp(token, self.value_or_expression())
-            return node
-        elif token.type == INTEGER:
-            self.str_compare(INTEGER)
-            return Int(token)
-        elif token.type == no:
-            self.str_compare(no)
-            node = UnaryOp(token, self.value_or_expression())
-            return node
+            return syntax_error(self)
+        self.current_token = self.lexer.get_next_token()
+        return node
+
+    def after_term(self):
+        node = self.factor()
+        while self.current_token.type == 'MUL':
+            type_name = self.current_token.type
+            self.current_token = self.lexer.get_next_token()
+            node = Binary_Operation(left = node, operation = type_name, right = self.factor())
+        return node
+
+    def after_expression(self):
+        node = self.after_term()
+        while self.current_token.type in ('PLUS', 'MINUS'):
+            type_name = self.current_token.type
+            self.current_token = self.lexer.get_next_token()
+            node = Binary_Operation(left = node, operation = type_name, right = self.after_term())
+        return node
+
 # div and mlt
     def mlt_div(self):
         node = self.value_or_expression()
@@ -215,21 +267,14 @@ class Tokenizer(object):
             self.current_char = None
         else:
             self.current_char = self.user_input[self.pos]
-# see what is after
-#    def peek(self):
-#        peek_pos = self.pos + 1
-#        if peek_pos > len(self.user_input) - 1:
-#            return None
-#        else:
-#            return self.user_input[peek_pos]
-####
+
     def assignment(self):
         result = ''
         while self.current_char is not None and self.current_char in (':', '='):
             result = result + self.current_char
             self.advance()
         if result == ':=':
-            return 'assign'
+            return 'ASSIGN'
         else:
             return syntax_error(self)
     def a_space(self):
@@ -243,7 +288,7 @@ class Tokenizer(object):
             self.advance()
         return int(result)
 
-    def int_list(self):
+    def Array(self):
         result = ''
         self.advance()
         while self.current_char is not None and self.current_char != ']':
@@ -262,10 +307,10 @@ class Tokenizer(object):
                 return Token(INTEGER, self.integer())
             if self.current_char == '+':
                 self.advance()
-                return Token(pls, '+')
+                return Token(PLUS, '+')
             if self.current_char == '-':
                 self.advance()
-                return Token(mns, '-')
+                return Token(MU, '-')
             if self.current_char == '*':
                 self.advance()
                 return Token(mlt, '*')
@@ -286,16 +331,16 @@ class Tokenizer(object):
                 return Token(right_braces, '}')
             if self.current_char == '=':
                 self.advance()
-                return Token(equals, '=')
+                return Token(EQUALS, '=')
             if self.current_char == '>':
                 self.advance()
-                return Token(greater, '>')
+                return Token(GREATER, '>')
             if self.current_char == '<':
                 self.advance()
-                return Token(smaller, '<')
+                return Token(SMALLER, '<')
             if self.current_char == ';':
                 self.advance()
-                return Token(semi, ';')
+                return Token(SEMI, ';')
             if self.current_char == '¬':
                 self.advance()
                 return Token(no, '¬')
@@ -306,37 +351,37 @@ class Tokenizer(object):
                 self.advance()
                 return Token(orr, '∨')
             if self.current_char == '[':
-                return Token(int_list, self.int_list())
+                return Token(ARRAY, self.Array())
             if self.current_char == ':':
-                return Token(assign, self.assignment())
+                return Token(ASSIGN, self.assignment())
             if self.current_char.isalpha():
                 result = ''
                 while self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit()):
                     result += self.current_char
                     self.advance()
-                if result == "while":
-                    return Token("WHILE", "while")
-                elif result == "skip":
-                    return Token("SKIP", "skip")
-                elif result == "do":
-                    return Token("DO", "do")
-                elif result == "if":
-                    return Token("IF", "if")
-                elif result == "else":
-                    return Token("ELSE", "else")
-                elif result == "then":
-                    return Token("THEN", "then")
-                elif result == "true":
-                    return Token("BOOL", True)
-                elif result == "false":
-                    return Token("BOOL", False)
+                if result == 'while':
+                    return Token('WHILE', 'while')
+                elif result == 'skip':
+                    return Token('SKIP', 'skip')
+                elif result == 'do':
+                    return Token('DO', 'do')
+                elif result == 'if':
+                    return Token('IF', 'if')
+                elif result == 'else':
+                    return Token('ELSE', 'else')
+                elif result == 'then':
+                    return Token('THEN', 'then')
+                elif result == 'true':
+                    return Token('BOOL', True)
+                elif result == 'false':
+                    return Token('BOOL', False)
                 else:
                     return Token("VAR", result)
             self.error()
         return Token(EOF, None)
 
-INTEGER, int_list, pls, mns, mlt, div, left_parenthesis, left_parenthesis, left_braces, right_braces, assign, equals, greater, smaller, skip, semi, no, AND, OR, WHILE, IF, THEN, ELSE, EOF = (
-'INTEGER', 'int_list', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', '{', '}', '->', '=', '>', '<', 'skip', ';', '¬', '∧', '∨', 'while', 'if', 'then', 'else', 'EOF')
+INTEGER, ARRAY, PLUS, MINUS, MUL, DIV, LEFT_PARANTHESIS, RIGHT_PARANTHESIS, LEFT_BRACES, RIGHT_BRACES, ASSIGN, EQUALS, GREATER, SMALLER, SKIP, SEMI, NOT, AND, OR, DO, WHILE, IF, THEN, ELSE, EOF = (
+'INTEGER', 'ARRAY', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', '{', '}', '->', '=', '>', '<', 'skip', ';', '¬', '∧', '∨', 'do', 'while', 'if', 'then', 'else', 'EOF')
 ################################################################################
 # main
 def main():
