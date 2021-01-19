@@ -10,13 +10,12 @@ class AST_Structure(object):
     pass
 # binary operators class
 class Binary_Operation(AST_Structure):
-# constructor
     def __init__(self, left, operation, right):
         self.left = left
         self.token = self.operation = operation
         self.right = right
 # integer token class
-class Number(AST_Structure):
+class Int(AST_Structure):
     def __init__(self, token):
         self.token = token
         self.value = token.value
@@ -25,12 +24,64 @@ class UnaryOp(AST_Structure):
     def __init__(self, operation, expr):
         self.token = self.operation = operation
         self.expr = expr
+# variable
+class Var(AST_Structure):
+    def __init__(self, token):
+        self.value = token.value
+        self.operation = token.type
+# array of integers
+class Array(AST_Structure):
+    def __init__(self, token):
+        self.value = token.value
+        self.operation = token.type
+# boolean
+class Boolean(AST_Structure):
+    def __init__(self, token):
+        self.value = token.value
+        self.operation = token.type
+# Not
+class Not(AST_Structure):
+    def __init__(self, node):
+        self.operation = no
+        self.ap = node
+# Skip
+class Skip(AST_Structure):
+    def __init__(self, token):
+        self.value = token.value
+        self.operation = token.type
+# Assign
+class Assign(AST_Structure):
+    def __init__(self, left, operation, right):
+        self.left = left
+        self.operation = operation
+        self.right = right
+# Compare
+class Compare(AST_Structure):
+    def __init__(self, left, operation, right):
+        self.left = left
+        self.operation = operation
+        self.right = right
+# while
+class While(AST_Structure):
+    def __init__(self, condition, while_true, while_false):
+        self.condition = condition
+        self.while_true = while_true
+        self.operation = 'WHILE'
+        self.while_false = while_false
+# if
+class If(AST_Structure):
+    def __init__(self, condition, if_true, if_false):
+        self.condition = condition
+        self.if_true = if_true
+        self.operation = 'IF'
+        self.if_false = if_false
 ################################################################################
 # parser
 class Parser(object):
 # constructor
     def __init__(self, lexer):
         self.lexer = lexer
+        self.state = lexer.state
         self.current = self.lexer.get_next_token()
 # error catcher
     def syntax_error(self):
@@ -54,7 +105,7 @@ class Parser(object):
             return node
         elif token.type == INTEGER:
             self.str_compare(INTEGER)
-            return Number(token)
+            return Int(token)
         elif token.type == no:
             self.str_compare(no)
             node = UnaryOp(token, self.value_or_expression())
@@ -128,7 +179,7 @@ class Interpreter(Node):
             return self.visit(node.right)
 
 # get number value
-    def visit_Number(self, node):
+    def visit_Int(self, node):
         return node.value
 
     def interpreter(self):
