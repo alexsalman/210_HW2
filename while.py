@@ -6,399 +6,260 @@
 # (3) https://ruslanspivak.com/lsbasi-part9/
 # (4) https://github.com/versey-sherry/while/blob/master/parsewhile.py
 ################################################################################
-# data structure
-class AST_Structure(object):
-    pass
-# binary operators class
-class Binary_Operation(AST_Structure):
-    def __init__(self, left, operation, right):
-        self.left = left
-        self.token = self.operation = operation
-        self.right = right
-# integer token class
-class Int(AST_Structure):
-    def __init__(self, token):
-        self.token = token
-        self.value = token.value
-# variable
-class Var(AST_Structure):
-    def __init__(self, token):
-        self.value = token.value
-        self.operation = token.type
-# array of integers
-class Array(AST_Structure):
-    def __init__(self, token):
-        self.value = token.value
-        self.operation = token.type
-# boolean
-class Boolean(AST_Structure):
-    def __init__(self, token):
-        self.value = token.value
-        self.operation = token.type
-# Not
-class Not(AST_Structure):
-    def __init__(self, node):
-        self.operation = NOT
-        self.ap = node
-# Skip
-class Skip(AST_Structure):
-    def __init__(self, token):
-        self.value = token.value
-        self.operation = token.type
-# Assign
-class Assign(AST_Structure):
-    def __init__(self, left, operation, right):
-        self.left = left
-        self.operation = operation
-        self.right = right
-# Compare
-class Compare(AST_Structure):
-    def __init__(self, left, operation, right):
-        self.left = left
-        self.operation = operation
-        self.right = right
-# while
-class While(AST_Structure):
-    def __init__(self, condition, while_true, while_false):
-        self.condition = condition
-        self.while_true = while_true
-        self.operation = 'WHILE'
-        self.while_false = while_false
-# if
-class If(AST_Structure):
-    def __init__(self, condition, if_true, if_false):
-        self.condition = condition
-        self.if_true = if_true
-        self.operation = 'IF'
-        self.if_false = if_false
-################################################################################
-# parser
-class Parser(object):
-# constructor
-    def __init__(self, lexer):
-        self.lexer = lexer
-        self.state = lexer.state
-        self.current = self.lexer.get_next_token()
-# error catcher
-    def syntax_error(self):
-        raise Exception('You have a syntax error . . ')
-# comapre token type
-    def factor(self):
-        token = self.current
-        if token.type == 'MINUS':
-            self.current_token = self.lexer.get_next_token()
-            token = self.current_token
-            token.value = -token.value
-            node = Int(token)
-        elif token.type == 'INTEGER':
-            node = Int(token)
-        elif token.type == 'VAR':
-            node = Var(token)
-        elif token.type == 'ARRAY':
-            node = Array(token)
-        elif token.type == 'NOT':
-            self.current_token = self.lexer.get_next_token()
-            if self.current_token.type == 'LEFT_PARANTHESIS':
-                self.current_token = self.lexer.get_next_token()
-                node = self.before_expression()
-            elif self.current_token.type == 'BOOL':
-                node = Boolean(self.current_token)
-            else:
-                return syntax_error(self)
-            node = Not(node)
-        elif token.type == 'BOOL':
-            node = Boolean(token)
-        elif token.type == 'LEFT_PARANTHESIS':
-            self.current_token = self.lexer.get_next_token()
-            node = self.before_expression()
-        elif token.type == 'RIGHT_PARANTHESIS':
-            self.current_token = self.lexer.get_next_token()
-        elif token.type == 'LEFT_BRACES':
-            self.current_token = self.lexer.get_next_token()
-            node = self.middle_expression()
-        elif token.type == 'RIGHT_BRACES':
-            self.current_token = self.lexer.get_next_token()
-        elif token.type == 'SKIP':
-            node = Skip(token)
-        elif token.type == 'WHILE':
-            self.current_token = self.lexer.get_next_token()
-            condition = self.before_expression()
-            while_false = Skip(Token('SKIP' ,'skip'))
-            if self.current_token.type == 'DO':
-                self.current_token = self.lexer.get_next_token()
-                if self.current_token == 'LEFT_BRACES':
-                    while_true = self.middle_expression()
-                else:
-                    while_true = self.middle_term()
-            return While(condition, while_true, while_false)
-        elif token.type == "IF":
-            self.current_token = self.lexer.get_next_token()
-            condition = self.before_expression()
-            if self.current_token.type == "THEN":
-                self.current_token = self.lexer.get_next_token()
-                if_true = self.middle_expression()
-            if self.current_token.type == "ELSE":
-                self.current_token = self.lexer.get_next_token()
-                if_false = self.middle_expression()
-            return If(condition, if_true, if_false)
-        else:
-            return syntax_error(self)
-        self.current_token = self.lexer.get_next_token()
-        return node
+import sys
+import copy
+from lexer import *
+from definitions import *
+from parser import *
 
-    def after_term(self):
-        node = self.factor()
-        while self.current_token.type == 'MUL':
-            type_name = self.current_token.type
-            self.current_token = self.lexer.get_next_token()
-            node = Binary_Operation(left = node, operation = type_name, right = self.factor())
-        return node
 
-    def after_expression(self):
-        node = self.after_term()
-        while self.current_token.type in ('PLUS', 'MINUS'):
-            type_name = self.current_token.type
-            self.current_token = self.lexer.get_next_token()
-            node = Binary_Operation(left = node, operation = type_name, right = self.after_term())
-        return node
 
-    def after_parse(self):
-        return self.after_parse()
-
-    def before_term(self):
-        node = self.after_expression()
-        if self.current_token.type in ('EQUAL', 'SMALLER'):
-            type_name = self.current_token.type
-            self.current_token = self.lexer.get_next_token()
-            node = Binary_Operation(left = node, operation = type_name, right = self.after_expression())
-        return node
-
-    def before_expression(self):
-        node = self.before_term()
-        while self.current_token.type in ('AND', 'OR'):
-            #print(self.current_token)
-            type_name = self.current_token.type
-            self.current_token = self.lexer.get_next_token()
-            node = Binary_Operation(left = node, operation = type_name, right = self.before_term())
-        return node
-
-    def before_parse(self):
-        return self.before_expression()
-
-    def middle_term(self):
-        node = self.before_expression()
-        if self.current_token.type == 'ASSIGN':
-            type_name = self.current_token.type
-            self.current_token = self.lexer.get_next_token()
-            node = Assign(left = node, operation = type_name, right = self.before_expression())
-        return node
-
-    def middle_expression(self):
-        node = self.middle_term()
-        while self.current_token.type == 'SEMI':
-            type_name = self.current_token.type
-            self.current_token = self.lexer.get_next_token()
-            node = Compare(left = node, operation = type_name, right = self.middle_term())
-        return node
-    #this returns a node that represents combination of aexpr and bexpr
-    def middle_parse(self):
-        return self.middle_expression()
 ################################################################################
 # interpreter for tree traversal, AST
-class Node(object):
-    def visit(self, node):
-        method_name = 'visit_' + type(node).__name__
-        visitor = getattr(self, method_name, self.generic_visit)
-        return visitor(node)
-    def generic_visit(self, node):
-        raise Exception('No visit_{} method'.format(type(node).__name__))
+class Interpreter():
+    def __init__(self, parser):
+        self.state = parser.state
+        #load the AST by its root node and evaluate recurssively
+        self.ast = parser.middle_parse()
+        self.print_var = []
+        self.print_state = []
+        self.print_step = []
+        self.init_step = to_print(self.ast)
+        #print("The biscuit is here", self.current_node)
 
-class Interpreter(Node):
-# constructor
-    def __init__(self, parsing_node):
-        self.parsing_node = parsing_node
-# check if children equels either of the arithmatic operations
-    def visit_Binary_Operation(self, node):
-        if node.operation.type == PLUS:
-            return self.visit(node.left) + self.visit(node.right)
-        elif node.operation.type == MINUS:
-            return self.visit(node.left) - self.visit(node.right)
-        elif node.operation.type == DIV:
-            return self.visit(node.left) / self.visit(node.right)
-        elif node.operation.type == MUL:
-            return self.visit(node.left) * self.visit(node.right)
-
-    def boolean(self, node):
-        if node.operation.type == true:
-            return self.visit(node.right)
-        elif node.operation.type == false:
-            return not self.visit(node.right)
-
-    def skip(self, node):
-        if node.operation.type == skip:
-            return self.visit(node.right)
-
-# get number value
-    def visit_Int(self, node):
-        return node.value
-
-    def interpreter(self):
-        ast_tree = self.parsing_node.middle_parse()
-        return self.visit(ast_tree)
+    def visit(self):
+        return evaluate_print(self.ast, self.state, self.print_var, self.print_state, self.print_step, self.init_step)
 ################################################################################
-# tokenizer
-class Token(object):
-    def __init__(self, type, value):
-        self.type = type
-        self.value = value
+# to print
+def dictionary(var, value):
+    return dict([tuple([var,value])])
 
-    def __str__(self):
-        return 'Token({type}, {value})'.format(type=self.type, value=repr(self.value))
+#Helper function that prints recursively
+def to_print(node):
+    if node.operation in ('INTEGER', 'ARRAY', 'VAR', 'SKIP'):
+        return node.value
+    elif node.operation in ('BOOL'):
+        return str(node.value).lower()
+    elif node.operation in ('PLUS', 'MINUS', 'MUL', 'EQUALS', 'SMALLER', 'AND', 'OR'):
+        return ''.join(['(',str(to_print(node.left)), node.operation, str(to_print(node.right)), ')'])
+    elif node.operation in ('NOT'):
+        return ''.join([node.operation,str(to_print(node.nt))])
+    elif node.operation in ('ASSIGN'):
+        return ' '.join([str(to_print(node.left)), node.operation, str(to_print(node.right))])
+    elif node.operation in ('SEMI'):
+        return ' '.join([''.join([str(to_print(node.left)), node.operation]), str(to_print(node.right))])
+    elif node.operation in ('WHILE'):
+        return ' '.join(['while', str(to_print(node.condition)), 'do', '{', str(to_print(node.while_true)), '}'])
+    elif node.operation in ('IF'):
+        return ' '.join(['if', str(to_print(node.condition)), 'then', '{', str(to_print(node.if_true)), '}', 'else', '{', str(to_print(node.if_false)) , '}'])
+    else:
+        raise Exception('You have a syntax error . . ')
 
-    def __repr__(self):
-        return self.__str__()
+class Str_Function():
+    def __init__(self, string):
+        self.string = string
+    def __add__(self, other):
+        return (self.string + other.string)
+    def __sub__(self, other):
+        return (self.string.replace(other.string, '', 1))
 
-class Tokenizer(object):
-# constructor
-    def __init__(self, user_input):
-        self.state = {}
-        self.user_input = user_input
-        self.pos = 0
-        self.current_char = self.user_input[self.pos]
 
-    def syntax_error(self):
-        raise Exception('You have an invalid character . . ')
-# advance the pointer
-    def advance(self):
-        self.pos += 1
-        if self.pos > len(self.user_input) - 1:
-            self.current_char = None
+def evaluate_print(ast, state, print_var, print_state, print_step, init_step):
+    state = state
+    node = ast
+    #This is to store all the variables that need printing, in case var without declaration
+    print_var = print_var
+    #This is to store all the states
+    print_state = print_state
+    print_step = print_step
+    init_step = init_step
+    #These are the fundamentals that won't add to any lists above
+    if node.operation in ('INTEGER', 'ARRAY', 'BOOL'):
+        return node.value
+    elif node.operation == 'VAR':
+        if node.value in state:
+            return state[node.value]
         else:
-            self.current_char = self.user_input[self.pos]
-
-    def assignment(self):
-        result = ''
-        while self.current_char is not None and self.current_char in (':', '='):
-            result = result + self.current_char
-            self.advance()
-        if result == ':=':
-            return 'ASSIGN'
+            state = state.update(dictionary(node.value, 0))
+            return 0
+    elif node.operation == 'SKIP':
+        state = state
+        temp_var = set(print_var)
+        temp_state = copy.deepcopy(state)
+        temp_state = dict((var, temp_state[var]) for var in temp_var)
+        print_state.append(temp_state)
+        temp_step = Str_Function(str(to_print(node)))
+        print_step.append([Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; ")])
+        init_step = Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; ")
+    elif node.operation == 'SEMI':
+        evaluate_print(node.left, state, print_var, print_state, print_step, init_step)
+        temp_var = set(print_var)
+        temp_state = copy.deepcopy(state)
+        temp_state = dict((var, temp_state[var]) for var in temp_var)
+        print_state.append(temp_state)
+        temp_step = Str_Function(str(to_print(node.left)))
+        #this init is the init at the start of calling comp node
+        print_step.append([str(Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; "))])
+        init_step = Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; ")
+        #print("Comp1", state)
+        evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
+    elif node.operation == 'ASSIGN':
+        var = node.left.value
+        print_var.append(var)
+        if var in state:
+            state[var] = evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
         else:
-            return syntax_error(self)
-    def a_space(self):
-        while self.current_char is not None and self.current_char.isspace():
-            self.advance()
+            state.update(dictionary(var, evaluate_print(node.right, state, print_var, print_state, print_step, init_step)))
+        temp_var = set(print_var)
+        temp_state = copy.deepcopy(state)
+        temp_state = dict((var, temp_state[var]) for var in temp_var)
+        print_state.append(temp_state)
+        temp_step = Str_Function(str(to_print(node)))
+        print_step.append(["skip; "+ str(Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; "))])
+        init_step = Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; ")
 
-    def integer(self):
-        result = ''
-        while self.current_char is not None and self.current_char.isdigit():
-            result += self.current_char
-            self.advance()
-        return int(result)
+    elif node.operation == 'PLUS':
+        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step)+evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
 
-    def Array(self):
-        result = ''
-        self.advance()
-        while self.current_char is not None and self.current_char != ']':
-            result += self.current_char
-            self.advance()
-        self.advance()
-        result = [int(i) for i in result.split(',')]
-        return result
+    elif node.operation == 'MINUS':
+        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step)-evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
 
-    def get_next_token(self):
-        while self.current_char is not None:
-            if self.current_char.isspace():
-                self.a_space()
-                continue
-            if self.current_char.isdigit():
-                return Token(INTEGER, self.integer())
-            if self.current_char == '+':
-                self.advance()
-                return Token(PLUS, '+')
-            if self.current_char == '-':
-                self.advance()
-                return Token(MINUS, '-')
-            if self.current_char == '*':
-                self.advance()
-                return Token(MUL, '*')
-            if self.current_char == '/':
-                self.advance()
-                return Token(DIV, '/')
-            if self.current_char == '(':
-                self.advance()
-                return Token(LEFT_PARANTHESIS, '(')
-            if self.current_char == ')':
-                self.advance()
-                return Token(RIGHT_PARANTHESIS, ')')
-            if self.current_char == '{':
-                self.advance()
-                return Token(LEFT_BRACES, '{')
-            if self.current_char == '}':
-                self.advance()
-                return Token(RIGHT_BRACES, '}')
-            if self.current_char == '=':
-                self.advance()
-                return Token(EQUALS, '=')
-            if self.current_char == '>':
-                self.advance()
-                return Token(GREATER, '>')
-            if self.current_char == '<':
-                self.advance()
-                return Token(SMALLER, '<')
-            if self.current_char == ';':
-                self.advance()
-                return Token(SEMI, ';')
-            if self.current_char == '¬':
-                self.advance()
-                return Token(NOT, '¬')
-            if self.current_char == '∧':
-                self.advance()
-                return Token(AND, '∧')
-            if self.current_char == '∨':
-                self.advance()
-                return Token(OR, '∨')
-            if self.current_char == '[':
-                return Token(ARRAY, self.Array())
-            if self.current_char == ':':
-                return Token(ASSIGN, self.assignment())
-            if self.current_char.isalpha():
-                result = ''
-                while self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit()):
-                    result += self.current_char
-                    self.advance()
-                if result == 'while':
-                    return Token('WHILE', 'while')
-                elif result == 'skip':
-                    return Token('SKIP', 'skip')
-                elif result == 'do':
-                    return Token('DO', 'do')
-                elif result == 'if':
-                    return Token('IF', 'if')
-                elif result == 'else':
-                    return Token('ELSE', 'else')
-                elif result == 'then':
-                    return Token('THEN', 'then')
-                elif result == 'true':
-                    return Token('BOOL', True)
-                elif result == 'false':
-                    return Token('BOOL', False)
-                else:
-                    return Token("VAR", result)
-            self.error()
-        return Token(EOF, None)
+    elif node.operation == 'MUL':
+        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step)*evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
 
-INTEGER, ARRAY, PLUS, MINUS, MUL, DIV, LEFT_PARANTHESIS, RIGHT_PARANTHESIS, LEFT_BRACES, RIGHT_BRACES, ASSIGN, EQUALS, GREATER, SMALLER, SKIP, SEMI, NOT, AND, OR, DO, WHILE, IF, THEN, ELSE, EOF = (
-'INTEGER', 'ARRAY', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', '{', '}', '->', '=', '>', '<', 'skip', ';', '¬', '∧', '∨', 'do', 'while', 'if', 'then', 'else', 'EOF')
+    elif node.operation == 'NOT':
+        return not evaluate_print(node.ap, state, print_var, print_state, print_step, init_step)
+
+    elif node.operation =="EQUALS":
+        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step) == evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
+
+    elif node.operation =='SMALLER':
+        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step) < evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
+
+    elif node.operation =='AND':
+        return (evaluate_print(node.left, state, print_var, print_state, print_step, init_step) and evaluate_print(node.right, state, print_var, print_state, print_step, init_step))
+
+    elif node.operation =='OR':
+        return (evaluate_print(node.left, state, print_var, print_state, print_step, init_step) or evaluate_print(node.right, state, print_var, print_state, print_step, init_step))
+
+    elif node.operation == 'WHILE':
+        condition = node.condition
+        while_true = node.while_true
+        while_false = node.while_false
+        sentinel = 0
+        while evaluate_print(condition, state, print_var, print_state, print_step, init_step):
+            sentinel = sentinel+1
+            if sentinel > 60000-1:
+                break
+            temp_var = set(print_var)
+            temp_state = copy.deepcopy(state)
+            temp_state = dict((var, temp_state[var]) for var in temp_var)
+            print_state.append(temp_state)
+            init_step = init_step.replace(to_print(node), str(to_print(node.while_true)+'; '+to_print(node)))
+            print_step.append([init_step])
+            evaluate_print(while_true, state, print_var, print_state, print_step, init_step)
+            temp_var = set(print_var)
+            temp_state = copy.deepcopy(state)
+            temp_state = dict((var, temp_state[var]) for var in temp_var)
+            print_state.append(temp_state)
+            #"node" is the whole while node
+            temp_step = Str_Function(str(to_print(node.while_true)))
+            print_step.append([Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; ")])
+            init_step = Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; ")
+        temp_var = set(print_var)
+        temp_state = copy.deepcopy(state)
+        temp_state = dict((var, temp_state[var]) for var in temp_var)
+        print_state.append(temp_state)
+        #"node" is the whole while node
+        temp_step = Str_Function(to_print(node))
+        #print_step.append([Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; ") + "skip; "])
+        print_step.append(["skip; "+ (Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; "))])
+        init_step = Str_Function(Str_Function(init_step) - temp_step) - Str_Function("; ")
+    elif node.operation == 'IF':
+        condition = node.condition
+        if_true = node.if_true
+        if_false = node.if_false
+        if evaluate_print(condition, state, print_var, print_state, print_step, init_step):
+            #only record the state before execution
+            temp_var = set(print_var)
+            temp_state = copy.deepcopy(state)
+            temp_state = dict((var, temp_state[var]) for var in temp_var)
+            print_state.append(temp_state)
+            temp_step = Str_Function(str(to_print(node)))
+            print_step.append([str(to_print(node.if_true)) + (Str_Function(init_step) - temp_step)])
+            init_step = str(to_print(node.if_true)) + (Str_Function(init_step) - temp_step)
+            evaluate_print(if_true, state, print_var, print_state, print_step, init_step)
+        else:
+            temp_var = set(print_var)
+            temp_state = copy.deepcopy(state)
+            temp_state = dict((var, temp_state[var]) for var in temp_var)
+            print_state.append(temp_state)
+            temp_step = Str_Function(str(to_print(node)))
+            print_step.append([str(to_print(node.if_false)) + (Str_Function(init_step) - temp_step)])
+            init_step = str(to_print(node.if_false)) + (Str_Function(init_step) - temp_step)
+            evaluate_print(if_false, state, print_var, print_state, print_step, init_step)
+    else:
+        raise Exception("Nothing I can do bro")
+
+################################################################################
+
+
+INTEGER, ARRAY, PLUS, MINUS, MUL, DIV, LEFT_PARANTHESIS, RIGHT_PARANTHESIS, LEFT_BRACES, RIGHT_BRACES, ASSIGN, EQUALS, GREATER, SMALLER, SKIP, SEMI, NOT, AND, OR, DO, WHILE, IF, THEN, ELSE, BOOL,EOF = (
+'INTEGER', 'ARRAY', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', '{', '}', '->', '=', '>', '<', 'skip', ';', '¬', '∧', '∨', 'do', 'while', 'if', 'then', 'else', 'BOOL','EOF')
 ################################################################################
 # main
 def main():
-    user_input = input ()
-    token = Tokenizer(user_input)
-    parsing_node = Parser(token)
-    interpreter = Interpreter(parsing_node)
-    to_print = interpreter.interpreter()
-    print(to_print)
+    contents = []
+    line = input()
+    line = line.strip()
+    line = " ".join(line.split())
+    contents.append(line)
+
+    text = ' '.join(contents)
+    text = ' '.join(text.split())
+    #check if the first command is skip
+
+    #print(text)
+    lexer = Tokenizer(text)
+    parser = Parser(lexer)
+    interpreter = Interpreter(parser)
+    interpreter.visit()
+    step_list = interpreter.print_step
+    #flattened the nested list
+    step_list = [item for sublist in step_list for item in sublist]
+    state_list = interpreter.print_state
+    if text[0:5] == "skip;" or text[0:6] == "skip ;":
+        del step_list[0]
+        del state_list[0]
+
+#    step_list[-1] = 'skip'
+
+#    if len(state_list) > 10000:
+#        state_list = state_list[0:10000]
+#        step_list = step_list[0:10000]
+
+    #print(print_var)
+#    if len(state_list) ==1 and state_list[0] == {} and text[0:4] == "skip":
+#        print('')
+#    else:
+#        for i in range(len(state_list)):
+#            output_string = []
+#            for key in sorted(state_list[i]):
+#                separator = " "
+#                output_string.append(separator.join([key, "→", str(state_list[i][key])]))
+
+#            state_string = ''.join(["{", ", ".join(output_string), "}"])
+#            step_string = ' '.join(['→', step_list[i]])
+#            print(step_string, state_string, sep = ', ')
+
+#[key, ‘->’  value]
+#‘’.join([key, ‘->’  value])
+#print(‘’.join([key, ‘->’  value])
+#store  = {‘a’: 5, ‘c’:5, ‘b’:3}
+#Store = sorted(store)
+#For key, value in store:
+#print(‘’.join([key, ‘->’  value]))
+#Store = {‘a’: 5, ‘c’:5, ‘b’:3}
 
 if __name__ == '__main__':
     main()
