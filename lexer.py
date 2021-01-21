@@ -1,7 +1,4 @@
-from definitions import Defs
-
-
-class Token(object):
+class Token:
     def __init__(self, type, value):
         self.type = type
         self.value = value
@@ -13,7 +10,7 @@ class Token(object):
         return self.__str__()
 
 
-class Tokenizer(object):
+class Tokenizer:
 
     def __init__(self, user_input):
         self.state = {}
@@ -39,7 +36,7 @@ class Tokenizer(object):
         if result == ':=':
             return 'ASSIGN'
         else:
-            self.syntax_error
+            self.syntax_error()
 
     def integer(self):
         result = ''
@@ -136,5 +133,5 @@ class Tokenizer(object):
                     return Token('BOOL', False)
                 else:
                     return Token('VAR', result)
-            self.syntax_error
+            self.syntax_error()
         return Token('EOF', None)

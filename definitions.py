@@ -1,8 +1,5 @@
-
-
-
-class Defs(operands):
-    op_dict = {
+def definitions(operand):
+    operand_dict = {
         'INTEGER': 'INTEGER',
         'ARRAY': 'ARRAY',
         'PLUS': 'PLUS',
@@ -30,4 +27,4 @@ class Defs(operands):
         'BOOL': 'BOOL',
         'EOF': 'EOF',
     }
-    return op_dict.get(self, operands)
+    return operand_dict.get(operand)
