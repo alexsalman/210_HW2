@@ -25,44 +25,28 @@ class Interpreter:
 
 
 def main():
-    contents = []
-    #a = 'i := 5 ; fact := 1 ; while 0 < i do { fact := fact * i ; i := i - 1 }'
+    array_input = []
     line = input()
-
-    contents.append(line)
-
-    text = ' '.join(contents)
-    text = ' '.join(text.split())
-
+    array_input.append(line)
+    text = ' '.join(array_input)
     lexer = Tokenizer(text)
-
     parser = Parser(lexer)
-
     interpreter = Interpreter(parser)
-
     interpreter.visit()
     step_list = interpreter.print_step
-
     step_list = [item for sublist in step_list for item in sublist]
     state_list = interpreter.print_state
+
     if text[0:5] == 'skip;' or text[0:6] == 'skip ;':
         del step_list[0]
         del state_list[0]
-
-    if len(state_list) > 10000:
-        state_list = state_list[0:10000]
-        step_list = step_list[0:10000]
-
-    if len(state_list) == 1 and state_list[0] == {} and text[0:4] == 'skip':
-        print('')
     else:
         for i in range(len(state_list)):
             output_string = []
             for key in sorted(state_list[i]):
                 separator = ' '
                 output_string.append(separator.join([key, '→', str(state_list[i][key])]))
-
-            state_string = ''.join(['{', ', '.join(output_string), '}'])
+        state_string = ''.join(['{', ', '.join(output_string), '}'])
         print(state_string)
 
 
