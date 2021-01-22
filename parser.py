@@ -38,20 +38,42 @@ class StrFunction:
         return self.string.replace(other.string, '', 1)
 
 
-def evaluate_print(ast, state, print_var, print_state, print_step, init_step):
+def evaluate_print(ast, state, print_var, print_state):
     state = state
     node = ast
     print_var = print_var
     print_state = print_state
-    print_step = print_step
-    init_step = init_step
     if node.operand in ('INTEGER', 'ARRAY', 'BOOL'):
         return node.value
+
+    elif node.operand == 'PLUS':
+        return evaluate_print(node.left, state, print_var, print_state)+evaluate_print(node.right, state, print_var, print_state)
+
+    elif node.operand == 'MINUS':
+        return evaluate_print(node.left, state, print_var, print_state)-evaluate_print(node.right, state, print_var, print_state)
+
+    elif node.operand == 'MUL':
+        return evaluate_print(node.left, state, print_var, print_state)*evaluate_print(node.right, state, print_var, print_state)
+
+    elif node.operand == 'NOT':
+        return not evaluate_print(node.nt, state, print_var, print_state)
+
+    elif node.operand == 'EQUALS':
+        return evaluate_print(node.left, state, print_var, print_state) == evaluate_print(node.right, state, print_var, print_state)
+
+    elif node.operand == 'SMALLER':
+        return evaluate_print(node.left, state, print_var, print_state) < evaluate_print(node.right, state, print_var, print_state)
+
+    elif node.operand == 'AND':
+        return evaluate_print(node.left, state, print_var, print_state) and evaluate_print(node.right, state, print_var, print_state)
+
+    elif node.operand == 'OR':
+        return evaluate_print(node.left, state, print_var, print_state) or evaluate_print(node.right, state, print_var, print_state)
+
     elif node.operand == 'VAR':
         if node.value in state:
             return state[node.value]
         else:
-            state = state.update(dictionary(node.value, 0))
             return 0
     elif node.operand == 'SKIP':
         state = state
@@ -59,110 +81,59 @@ def evaluate_print(ast, state, print_var, print_state, print_step, init_step):
         temp_state = copy.deepcopy(state)
         temp_state = dict((var, temp_state[var]) for var in temp_var)
         print_state.append(temp_state)
-        temp_step = StrFunction(str(to_print(node)))
-        print_step.append([StrFunction(StrFunction(init_step) - temp_step) - StrFunction("; ")])
-        init_step = StrFunction(StrFunction(init_step) - temp_step) - StrFunction("; ")
     elif node.operand == 'SEMI':
-        evaluate_print(node.left, state, print_var, print_state, print_step, init_step)
+        evaluate_print(node.left, state, print_var, print_state)
         temp_var = set(print_var)
         temp_state = copy.deepcopy(state)
         temp_state = dict((var, temp_state[var]) for var in temp_var)
         print_state.append(temp_state)
-        temp_step = StrFunction(str(to_print(node.left)))
-        print_step.append([str(StrFunction(StrFunction(init_step) - temp_step) - StrFunction("; "))])
-        init_step = StrFunction(StrFunction(init_step) - temp_step) - StrFunction("; ")
-        evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
+        evaluate_print(node.right, state, print_var, print_state)
     elif node.operand == 'ASSIGN':
         var = node.left.value
         print_var.append(var)
         if var in state:
-            state[var] = evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
+            state[var] = evaluate_print(node.right, state, print_var, print_state)
         else:
-            state.update(dictionary(var, evaluate_print(node.right, state, print_var, print_state, print_step, init_step)))
+            state.update(dictionary(var, evaluate_print(node.right, state, print_var, print_state)))
         temp_var = set(print_var)
         temp_state = copy.deepcopy(state)
         temp_state = dict((var, temp_state[var]) for var in temp_var)
         print_state.append(temp_state)
-        temp_step = StrFunction(str(to_print(node)))
-        print_step.append(['skip; '+str(StrFunction(StrFunction(init_step) - temp_step) - StrFunction('; '))])
-        init_step = StrFunction(StrFunction(init_step) - temp_step) - StrFunction('; ')
-
-    elif node.operand == 'PLUS':
-        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step)+evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
-
-    elif node.operand == 'MINUS':
-        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step)-evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
-
-    elif node.operand == 'MUL':
-        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step)*evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
-
-    elif node.operand == 'NOT':
-        return not evaluate_print(node.nt, state, print_var, print_state, print_step, init_step)
-
-    elif node.operand == 'EQUALS':
-        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step) == evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
-
-    elif node.operand == 'SMALLER':
-        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step) < evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
-
-    elif node.operand == 'AND':
-        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step) and evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
-
-    elif node.operand == 'OR':
-        return evaluate_print(node.left, state, print_var, print_state, print_step, init_step) or evaluate_print(node.right, state, print_var, print_state, print_step, init_step)
 
     elif node.operand == 'WHILE':
         condition = node.condition
         while_true = node.while_true
-        while_false = node.while_false
-        sentinel = 0
-        while evaluate_print(condition, state, print_var, print_state, print_step, init_step):
-            sentinel = sentinel+1
-            if sentinel > 60000-1:
-                break
+
+        while evaluate_print(condition, state, print_var, print_state):
             temp_var = set(print_var)
             temp_state = copy.deepcopy(state)
             temp_state = dict((var, temp_state[var]) for var in temp_var)
             print_state.append(temp_state)
-            init_step = init_step.replace(to_print(node), str(to_print(node.while_true)+'; '+to_print(node)))
-            print_step.append([init_step])
-            evaluate_print(while_true, state, print_var, print_state, print_step, init_step)
+            evaluate_print(while_true, state, print_var, print_state)
             temp_var = set(print_var)
             temp_state = copy.deepcopy(state)
             temp_state = dict((var, temp_state[var]) for var in temp_var)
             print_state.append(temp_state)
-            temp_step = StrFunction(str(to_print(node.while_true)))
-            print_step.append([StrFunction(StrFunction(init_step) - temp_step) - StrFunction("; ")])
-            init_step = StrFunction(StrFunction(init_step) - temp_step) - StrFunction("; ")
         temp_var = set(print_var)
         temp_state = copy.deepcopy(state)
         temp_state = dict((var, temp_state[var]) for var in temp_var)
         print_state.append(temp_state)
-        temp_step = StrFunction(to_print(node))
-        print_step.append(["skip; "+(StrFunction(StrFunction(init_step) - temp_step) - StrFunction("; "))])
-        init_step = StrFunction(StrFunction(init_step) - temp_step) - StrFunction("; ")
     elif node.operand == 'IF':
         condition = node.condition
         if_true = node.if_true
         if_false = node.if_false
-        if evaluate_print(condition, state, print_var, print_state, print_step, init_step):
+        if evaluate_print(condition, state, print_var, print_state):
             temp_var = set(print_var)
             temp_state = copy.deepcopy(state)
             temp_state = dict((var, temp_state[var]) for var in temp_var)
             print_state.append(temp_state)
-            temp_step = StrFunction(str(to_print(node)))
-            print_step.append([str(to_print(node.if_true)) + (StrFunction(init_step) - temp_step)])
-            init_step = str(to_print(node.if_true)) + (StrFunction(init_step) - temp_step)
-            evaluate_print(if_true, state, print_var, print_state, print_step, init_step)
+            evaluate_print(if_true, state, print_var, print_state)
         else:
             temp_var = set(print_var)
             temp_state = copy.deepcopy(state)
             temp_state = dict((var, temp_state[var]) for var in temp_var)
             print_state.append(temp_state)
-            temp_step = StrFunction(str(to_print(node)))
-            print_step.append([str(to_print(node.if_false)) + (StrFunction(init_step) - temp_step)])
-            init_step = str(to_print(node.if_false)) + (StrFunction(init_step) - temp_step)
-            evaluate_print(if_false, state, print_var, print_state, print_step, init_step)
+            evaluate_print(if_false, state, print_var, print_state)
     else:
         raise Exception("Something went wrong")
 

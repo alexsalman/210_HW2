@@ -16,12 +16,9 @@ class Interpreter:
         self.ast = parser.statement_parse()
         self.print_var = []
         self.print_state = []
-        self.print_step = []
-        self.init_step = to_print(self.ast)
 
     def visit(self):
-        return evaluate_print(self.ast, self.state, self.print_var, self.print_state, self.print_step, self.init_step)
-################################################################################
+        return evaluate_print(self.ast, self.state, self.print_var, self.print_state)
 
 
 def main():
@@ -33,21 +30,17 @@ def main():
     parser = Parser(lexer)
     interpreter = Interpreter(parser)
     interpreter.visit()
-    step_list = interpreter.print_step
-    step_list = [item for sublist in step_list for item in sublist]
     state_list = interpreter.print_state
 
-    if text[0:5] == 'skip;' or text[0:6] == 'skip ;':
-        del step_list[0]
-        del state_list[0]
+    if text == 'skip;':
+        del state_list
     else:
         for i in range(len(state_list)):
-            output_string = []
+            incomplete_output = []
             for key in sorted(state_list[i]):
-                separator = ' '
-                output_string.append(separator.join([key, '→', str(state_list[i][key])]))
-        state_string = ''.join(['{', ', '.join(output_string), '}'])
-        print(state_string)
+                incomplete_output.append(' '.join([key, '→', str(state_list[i][key])]))
+        output = ''.join(['{', ', '.join(incomplete_output), '}'])
+    print(output)
 
 
 if __name__ == '__main__':
