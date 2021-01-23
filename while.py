@@ -18,14 +18,13 @@ class Interpreter:
         self.print_state = []
 
     def visit(self):
-        return evaluate_print(self.ast, self.state, self.print_var, self.print_state)
+        return eval(self.ast, self.state, self.print_var, self.print_state)
 
 
 def main():
-    array_input = []
-    line = input()
-    array_input.append(line)
-    text = ' '.join(array_input)
+    # 'if ( [1,2,3,5,5,5,5,5,5] < [1,2,3,-20,79] ) then k := ( 49 ) * 3 + k else k := 2 * 2 * 2 + 3'
+    line = [input()]
+    text = ' '.join(line)
     lexer = Tokenizer(text)
     parser = Parser(lexer)
     interpreter = Interpreter(parser)

@@ -31,70 +31,74 @@ class StrFunction:
     def __init__(self, string):
         self.string = string
 
-    def __add__(self, other):
-        return self.string + other.string
-
     def __sub__(self, other):
         return self.string.replace(other.string, '', 1)
 
 
-def evaluate_print(ast, state, print_var, print_state):
+def eval(ast, state, print_var, print_state):
+
     state = state
     node = ast
     print_var = print_var
     print_state = print_state
+
     if node.operand in ('INTEGER', 'ARRAY', 'BOOL'):
         return node.value
 
     elif node.operand == 'PLUS':
-        return evaluate_print(node.left, state, print_var, print_state)+evaluate_print(node.right, state, print_var, print_state)
+        return eval(node.left, state, print_var, print_state)+eval(node.right, state, print_var, print_state)
 
     elif node.operand == 'MINUS':
-        return evaluate_print(node.left, state, print_var, print_state)-evaluate_print(node.right, state, print_var, print_state)
+        return eval(node.left, state, print_var, print_state)-eval(node.right, state, print_var, print_state)
 
     elif node.operand == 'MUL':
-        return evaluate_print(node.left, state, print_var, print_state)*evaluate_print(node.right, state, print_var, print_state)
+        return eval(node.left, state, print_var, print_state)*eval(node.right, state, print_var, print_state)
 
     elif node.operand == 'NOT':
-        return not evaluate_print(node.nt, state, print_var, print_state)
+        return not eval(node.nt, state, print_var, print_state)
 
     elif node.operand == 'EQUALS':
-        return evaluate_print(node.left, state, print_var, print_state) == evaluate_print(node.right, state, print_var, print_state)
+        return eval(node.left, state, print_var, print_state) == eval(node.right, state, print_var, print_state)
 
     elif node.operand == 'SMALLER':
-        return evaluate_print(node.left, state, print_var, print_state) < evaluate_print(node.right, state, print_var, print_state)
+        return eval(node.left, state, print_var, print_state) < eval(node.right, state, print_var, print_state)
 
     elif node.operand == 'AND':
-        return evaluate_print(node.left, state, print_var, print_state) and evaluate_print(node.right, state, print_var, print_state)
+        return eval(node.left, state, print_var, print_state) and eval(node.right, state, print_var, print_state)
 
     elif node.operand == 'OR':
-        return evaluate_print(node.left, state, print_var, print_state) or evaluate_print(node.right, state, print_var, print_state)
+        return eval(node.left, state, print_var, print_state) or eval(node.right, state, print_var, print_state)
 
     elif node.operand == 'VAR':
         if node.value in state:
             return state[node.value]
         else:
             return 0
+
     elif node.operand == 'SKIP':
         state = state
         temp_var = set(print_var)
         temp_state = copy.deepcopy(state)
         temp_state = dict((var, temp_state[var]) for var in temp_var)
         print_state.append(temp_state)
+
     elif node.operand == 'SEMI':
-        evaluate_print(node.left, state, print_var, print_state)
+        eval(node.left, state, print_var, print_state)
         temp_var = set(print_var)
         temp_state = copy.deepcopy(state)
         temp_state = dict((var, temp_state[var]) for var in temp_var)
         print_state.append(temp_state)
-        evaluate_print(node.right, state, print_var, print_state)
+        eval(node.right, state, print_var, print_state)
+
     elif node.operand == 'ASSIGN':
         var = node.left.value
         print_var.append(var)
+
         if var in state:
-            state[var] = evaluate_print(node.right, state, print_var, print_state)
+            state[var] = eval(node.right, state, print_var, print_state)
+
         else:
-            state.update(dictionary(var, evaluate_print(node.right, state, print_var, print_state)))
+            state.update(dictionary(var, eval(node.right, state, print_var, print_state)))
         temp_var = set(print_var)
         temp_state = copy.deepcopy(state)
         temp_state = dict((var, temp_state[var]) for var in temp_var)
@@ -104,12 +108,12 @@ def evaluate_print(ast, state, print_var, print_state):
         condition = node.condition
         while_true = node.while_true
 
-        while evaluate_print(condition, state, print_var, print_state):
+        while eval(condition, state, print_var, print_state):
             temp_var = set(print_var)
             temp_state = copy.deepcopy(state)
             temp_state = dict((var, temp_state[var]) for var in temp_var)
             print_state.append(temp_state)
-            evaluate_print(while_true, state, print_var, print_state)
+            eval(while_true, state, print_var, print_state)
             temp_var = set(print_var)
             temp_state = copy.deepcopy(state)
             temp_state = dict((var, temp_state[var]) for var in temp_var)
@@ -118,22 +122,26 @@ def evaluate_print(ast, state, print_var, print_state):
         temp_state = copy.deepcopy(state)
         temp_state = dict((var, temp_state[var]) for var in temp_var)
         print_state.append(temp_state)
+
     elif node.operand == 'IF':
         condition = node.condition
         if_true = node.if_true
         if_false = node.if_false
-        if evaluate_print(condition, state, print_var, print_state):
+
+        if eval(condition, state, print_var, print_state):
             temp_var = set(print_var)
             temp_state = copy.deepcopy(state)
             temp_state = dict((var, temp_state[var]) for var in temp_var)
             print_state.append(temp_state)
-            evaluate_print(if_true, state, print_var, print_state)
+            eval(if_true, state, print_var, print_state)
+
         else:
             temp_var = set(print_var)
             temp_state = copy.deepcopy(state)
             temp_state = dict((var, temp_state[var]) for var in temp_var)
             print_state.append(temp_state)
-            evaluate_print(if_false, state, print_var, print_state)
+            eval(if_false, state, print_var, print_state)
+
     else:
         raise Exception("Something went wrong")
 
@@ -155,6 +163,12 @@ class Var:
     def __init__(self, token):
         self.value = token.value
         self.operand = token.type
+
+
+#class Array:
+#    def __init__(self, token):
+#        self.value = token.value
+#        self.operand = token.type
 
 
 class Array:
@@ -230,65 +244,93 @@ class Parser:
 
     def factor(self):
         token = self.current_token
+
         if token.type == 'MINUS':
             self.current_token = self.lexer.get_next_token()
             token = self.current_token
             token.value = -token.value
             node = Int(token)
+
         elif token.type == 'INTEGER':
             node = Int(token)
+
         elif token.type == 'VAR':
             node = Var(token)
+
+#        elif token.type == 'ARRAY':
+#            node = Array(token)
+
         elif token.type == 'ARRAY':
             node = Array(token)
+
         elif token.type == 'NOT':
             self.current_token = self.lexer.get_next_token()
+
             if self.current_token.type == 'LEFT_PARENTHESIS':
                 self.current_token = self.lexer.get_next_token()
                 node = self.boolean_expression()
+
             elif self.current_token.type == 'BOOL':
                 node = Boolean(self.current_token)
+
             else:
                 self.syntax_error()
             node = Not(node)
+
         elif token.type == 'BOOL':
             node = Boolean(token)
+
         elif token.type == 'LEFT_PARENTHESIS':
             self.current_token = self.lexer.get_next_token()
             node = self.boolean_expression()
+
         elif token.type == 'RIGHT_PARENTHESIS':
             self.current_token = self.lexer.get_next_token()
+
         elif token.type == 'LEFT_BRACES':
             self.current_token = self.lexer.get_next_token()
             node = self.statement_expression()
+
         elif token.type == 'RIGHT_BRACES':
             self.current_token = self.lexer.get_next_token()
+
         elif token.type == 'SKIP':
             node = Skip(token)
+
         elif token.type == 'WHILE':
             self.current_token = self.lexer.get_next_token()
             condition = self.boolean_expression()
             while_false = Skip(Token('SKIP', 'skip'))
+
             if self.current_token.type == 'DO':
                 self.current_token = self.lexer.get_next_token()
+
                 if self.current_token == 'LEFT_BRACES':
                     while_true = self.statement_expression()
+
                 else:
                     while_true = self.statement_term()
+
             return While(condition, while_true, while_false)
+
         elif token.type == 'IF':
             self.current_token = self.lexer.get_next_token()
             condition = self.boolean_expression()
+
             if self.current_token.type == "THEN":
                 self.current_token = self.lexer.get_next_token()
                 if_true = self.statement_expression()
+
             if self.current_token.type == "ELSE":
                 self.current_token = self.lexer.get_next_token()
                 if_false = self.statement_expression()
+
             return If(condition, if_true, if_false)
+
         else:
             self.syntax_error()
         self.current_token = self.lexer.get_next_token()
+
         return node
 
     def arith_term(self):

@@ -45,6 +45,16 @@ class Tokenizer:
             self.advance()
         return int(result)
 
+ #   def array(self):
+  #      result = ''
+   #     self.advance()
+   #     while self.current_char is not None and self.current_char != ']':
+  #          result += self.current_char
+  #          self.advance()
+  #      self.advance()
+  #      result = [int(i) for i in result.split(',')]
+  #      return result
+
     def array(self):
         result = ''
         self.advance()
@@ -106,10 +116,15 @@ class Tokenizer:
             if self.current_char == '∨':
                 self.advance()
                 return Token('OR', '∨')
-            if self.current_char == '[':
-                return Token('ARRAY', self.array())
+            if self.current_char == '?':
+                self.advance()
+                return Token('QUESTION', '?')
+#            if self.current_char == '[':
+#               return Token('ARRAY', self.array())
             if self.current_char == ':':
                 return Token('ASSIGN', self.assignment())
+            if self.current_char == '[':
+                return Token('ARRAY', self.array())
             if self.current_char.isalpha():
                 result = ''
                 while self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit()):
