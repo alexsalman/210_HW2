@@ -1,3 +1,4 @@
 import lexer
-import definitions
+import interpreter
 import parser
+import definitions
