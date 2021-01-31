@@ -1,0 +1,83 @@
+commit 991f526aafb5afb603f480c2179252c53def6d1d
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Fri Jan 22 19:49:45 2021 -0800
+
+    This is the last one, I promise :) Happy Friday 1/22/2021 !
+
+commit 8cfaca03129bc8a95ca7a1e4541ceef6a403ac75
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Fri Jan 22 19:44:12 2021 -0800
+
+    Last commit. Done!
+
+commit 40882fef038d2433c0669b503ae44439ac16cf27
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Fri Jan 22 17:38:43 2021 -0800
+
+    Added arrays feature!
+
+commit 747cda86e68a9ea82c193192ba659b44270d1d5f
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Fri Jan 22 14:39:14 2021 -0800
+
+    Some clean up!
+
+commit 683010c6e1878cdb1b55b6a87406441c2bbbe834
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Fri Jan 22 12:56:17 2021 -0800
+
+    Tests pass when running ./tests.sh !
+
+commit 9393840d491c76d275e2cefc55b0dc49065a8b34
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Thu Jan 21 01:52:31 2021 -0800
+
+    Worked on some tests!
+
+commit 736ac45a13adf858133ba590280fb3fc3a908bc9
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Wed Jan 20 15:16:59 2021 -0800
+
+    Multiple files
+
+commit 1906ffa341d6d47558838b9ef7886f9fd54f6951
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Mon Jan 18 22:35:33 2021 -0800
+
+    Parser looks okay maybe
+
+commit 29de9df0b37d1686ebfdc3152ef73670ae2efe8e
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Mon Jan 18 21:24:46 2021 -0800
+
+    Parser, more functionalities
+
+commit 273c490353f3c49d3dc813ebd91adebea691a698
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Mon Jan 18 19:56:31 2021 -0800
+
+    Parser, add functionality
+
+commit 4dc8a21e0fe8150b7bec9e1d93a115b1ebb0e17f
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Mon Jan 18 15:14:37 2021 -0800
+
+    Tokenizer
+
+commit caf3a488300d58146beefb5c6d8be31df8eb544b
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Mon Jan 18 13:47:05 2021 -0800
+
+    Back to tackle
+
+commit 2bb6dbb487371cc348548ee86cd41bab93e49c0a
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Sat Jan 16 18:33:16 2021 -0800
+
+    Incomplete Tokenizer
+
+commit b6d02fbbbfaea210ac4d7bf3b27f9482073accb0
+Author: Alex Salman <aalsalma@ucsc.edu>
+Date:   Sat Jan 16 15:12:17 2021 -0800
+
+    First Commit
